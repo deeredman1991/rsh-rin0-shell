@@ -1,0 +1,12 @@
+{
+    "Font Path": "fonts/Nova/NovaCut.ttf",
+    "Font Size": 15,
+    "Text Colors": {
+        "Command Line": { "Red": 0.8, "Green": 1, "Blue":0.8 },
+        "Log": { "Red": 1, "Green": 1, "Blue":1 }
+    },
+    "Background Colors": {
+        "Command Line": { "Red": 0, "Green": 0, "Blue":0.5 },
+        "Log": { "Red": 0, "Green": 0, "Blue":0.3 }
+    }
+}
