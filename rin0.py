@@ -9,6 +9,7 @@ from kivy.graphics import Color, Rectangle
 from kivy.clock import Clock
 from kivy.uix.label import Label
 import json
+import commands as cmds
     
 with open('settings.json', 'r') as infile:
     SETTINGS = json.load(infile)
@@ -33,7 +34,7 @@ class Shell(Widget):
         self.log = Label(font_name = SETTINGS["Font Path"], font_size = SETTINGS["Font Size"])
         self.add_widget(self.log)
         
-        Clock.schedule_interval(self.update, 1.0/30.0)
+        Clock.schedule_interval(self.update_command_line, 1.0/30.0) # 30 fps
         Clock.schedule_interval(self.blink_cursor, 1.0/2)
         
     def blink_cursor(self, *ignore):
@@ -42,38 +43,38 @@ class Shell(Widget):
         elif self.cursor == ' ':
             self.cursor = '_'
         
-    def update(self, *ignore):
-        self.size = Window.size
+    def update_command_line(self, *ignore):
+        if self.size != Window.size:
+            self.size = Window.size
+            self.command_line.width = self.width
+            self.command_line.height = self.command_line.font_size
+            self.command_line.text_size = self.command_line.size
+            self.command_line.color = (SETTINGS["Text Colors"]["Command Line"]["Red"],
+                                       SETTINGS["Text Colors"]["Command Line"]["Green"],
+                                       SETTINGS["Text Colors"]["Command Line"]["Blue"], 1)
+            #Draw Command Line Background
+            with self.command_line.canvas.before:
+                Color(SETTINGS["Background Colors"]["Command Line"]["Red"],
+                      SETTINGS["Background Colors"]["Command Line"]["Green"],
+                      SETTINGS["Background Colors"]["Command Line"]["Blue"], 1)
+                Rectangle(pos=self.command_line.pos, size = self.command_line.size)
+            
+            
+            self.log.width = self.width
+            self.log.height = self.height - self.command_line.font_size
+            self.log.y = self.command_line.height
+            self.log.text_size = self.log.size
+            self.log.color = (SETTINGS["Text Colors"]["Log"]["Red"],
+                              SETTINGS["Text Colors"]["Log"]["Green"],
+                              SETTINGS["Text Colors"]["Log"]["Blue"], 1)
+            #Draw Log Background
+            with self.log.canvas.before:
+                Color(SETTINGS["Background Colors"]["Log"]["Red"],
+                      SETTINGS["Background Colors"]["Log"]["Green"],
+                      SETTINGS["Background Colors"]["Log"]["Blue"], 1)
+                Rectangle(pos=self.log.pos, size = self.log.size)
         
-        #Draw Command Line
-        self.command_line.text_size = self.command_line.size
-        self.command_line.width = self.width
-        self.command_line.height = self.command_line.font_size
         self.command_line.text = self.workingdir + self.command + self.cursor
-        self.command_line.color = (SETTINGS["Text Colors"]["Command Line"]["Red"],
-                                   SETTINGS["Text Colors"]["Command Line"]["Green"],
-                                   SETTINGS["Text Colors"]["Command Line"]["Blue"], 1)
-        #Draw Command Line Background
-        with self.command_line.canvas.before:
-            Color(SETTINGS["Background Colors"]["Command Line"]["Red"],
-                  SETTINGS["Background Colors"]["Command Line"]["Green"],
-                  SETTINGS["Background Colors"]["Command Line"]["Blue"], 1)
-            Rectangle(pos=self.command_line.pos, size = self.command_line.size)
-        
-        #Draw Log
-        self.log.text_size = self.log.size
-        self.log.width = self.width
-        self.log.height = self.height - self.command_line.font_size
-        self.log.y = self.command_line.height
-        self.log.color = (SETTINGS["Text Colors"]["Log"]["Red"],
-                          SETTINGS["Text Colors"]["Log"]["Green"],
-                          SETTINGS["Text Colors"]["Log"]["Blue"], 1)
-        #Draw Log Background
-        with self.log.canvas.before:
-            Color(SETTINGS["Background Colors"]["Log"]["Red"],
-                  SETTINGS["Background Colors"]["Log"]["Green"],
-                  SETTINGS["Background Colors"]["Log"]["Blue"], 1)
-            Rectangle(pos=self.log.pos, size = self.log.size)
             
     def _keyboard_closed(self):
         self._keyboard.unbind(on_key_down=self._on_keyboard_down)
@@ -109,16 +110,11 @@ class Shell(Widget):
             
 class ShellApp(App):
     def build(self):
-        self.shell = Shell()
         self.title = 'Rin0 Shell'
         self.icon = 'images/icon.png'
         #background_color = (0, 0, 0, 1) #Red, Green, Blue, Alpha
         #Window.clearcolor = (background_color)
-        return self.shell
-        
-    def on_resize(self, width, height):
-        self.shell.size = Window.size
-    
+        return Shell()
 
 if __name__ == '__main__':
     ShellApp().run()
