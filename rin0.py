@@ -44,22 +44,48 @@ class Shell(Widget):
         self.add_widget(self.log)
         
         #Misc Init
-        self.workingdir = "C:\working\dir\goes\here>"
-        self.command = ''
-        self.cursor = '_'
+        self._workingdir = "C:\working\dir\goes\here>"
+        self._command = ''
+        self._cursor = '_'
         
         self._on_resize()
         
-        Clock.schedule_interval(self.update_command_line, 1.0/15.0) # 15 fps
         Clock.schedule_interval(self.blink_cursor, 1.0/2)
         
+    @property
+    def workingdir(self):
+        return self._workingdir
+        
+    @workingdir.setter
+    def workingdir(self, value):
+        self._workingdir = value
+        self.update_command_line()
+        
+    @property
+    def command(self):
+        return self._command
+        
+    @command.setter
+    def command(self, value):
+        self._command = value
+        self.update_command_line()
+        
+    @property
+    def cursor(self):
+        return self._cursor
+        
+    @cursor.setter
+    def cursor(self, value):
+        self._cursor = value
+        self.update_command_line()
+    
     def blink_cursor(self, *ignore):
         if self.cursor == '_':
             self.cursor = ' '
         elif self.cursor == ' ':
             self.cursor = '_'
         
-    def update_command_line(self, dt, force = False):
+    def update_command_line(self):
         self.command_line.text = self.workingdir + self.command + self.cursor
         
     def _on_resize(self, *ignore):
