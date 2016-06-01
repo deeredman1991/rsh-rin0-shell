@@ -18,6 +18,9 @@ class Shell(Widget):
     def __init__(self):
         super(Shell, self).__init__()
         
+        #Grab re-size event
+        Window.bind(on_resize=self._on_resize)
+        
         #Keyboard Initialization
         self._keyboard = Window.request_keyboard(self._keyboard_closed, self, 'text')
         self._keyboard.bind(on_key_down=self._on_keyboard_down)
@@ -45,7 +48,9 @@ class Shell(Widget):
         self.command = ''
         self.cursor = '_'
         
-        Clock.schedule_interval(self.update, 1.0/15.0) # 15 fps
+        self._on_resize()
+        
+        Clock.schedule_interval(self.update_command_line, 1.0/15.0) # 15 fps
         Clock.schedule_interval(self.blink_cursor, 1.0/2)
         
     def blink_cursor(self, *ignore):
@@ -54,37 +59,35 @@ class Shell(Widget):
         elif self.cursor == ' ':
             self.cursor = '_'
         
-    def update(self, *ignore):
-        if self.size != Window.size:
-            
-            #Set size 
-            self.size = Window.size
-            
-            #Set Command Line Label Size
-            self.command_line.width = self.width
-            self.command_line.text_size = self.command_line.size
-            
-            #Draw Command Line Background
-            with self.command_line.canvas.before:
-                Color(SETTINGS["Background Colors"]["Command Line"]["Red"],
-                      SETTINGS["Background Colors"]["Command Line"]["Green"],
-                      SETTINGS["Background Colors"]["Command Line"]["Blue"], 1)
-                Rectangle(pos=self.command_line.pos, size = self.command_line.size)
-            
-            #Set Log Label Size
-            self.log.width = self.width
-            self.log.height = self.height - self.command_line.font_size
-            self.log.text_size = self.log.size
-                              
-            #Draw Log Background
-            with self.log.canvas.before:
-                Color(SETTINGS["Background Colors"]["Log"]["Red"],
-                      SETTINGS["Background Colors"]["Log"]["Green"],
-                      SETTINGS["Background Colors"]["Log"]["Blue"], 1)
-                Rectangle(pos=self.log.pos, size = self.log.size)
-        
-        #Draw Command Line
+    def update_command_line(self, dt, force = False):
         self.command_line.text = self.workingdir + self.command + self.cursor
+        
+    def _on_resize(self, *ignore):
+        #Set size 
+        self.size = Window.size
+        
+        #Set Command Line Label Size
+        self.command_line.width = self.width
+        self.command_line.text_size = self.command_line.size
+        
+        #Draw Command Line Background
+        with self.command_line.canvas.before:
+            Color(SETTINGS["Background Colors"]["Command Line"]["Red"],
+                  SETTINGS["Background Colors"]["Command Line"]["Green"],
+                  SETTINGS["Background Colors"]["Command Line"]["Blue"], 1)
+            Rectangle(pos=self.command_line.pos, size = self.command_line.size)
+        
+        #Set Log Label Size
+        self.log.width = self.width
+        self.log.height = self.height - self.command_line.font_size
+        self.log.text_size = self.log.size
+                          
+        #Draw Log Background
+        with self.log.canvas.before:
+            Color(SETTINGS["Background Colors"]["Log"]["Red"],
+                  SETTINGS["Background Colors"]["Log"]["Green"],
+                  SETTINGS["Background Colors"]["Log"]["Blue"], 1)
+            Rectangle(pos=self.log.pos, size = self.log.size)
             
     def _keyboard_closed(self):
         self._keyboard.unbind(on_key_down=self._on_keyboard_down)
@@ -92,18 +95,18 @@ class Shell(Widget):
         
     def _on_keyboard_down(self, keyboard, keycode, text, modifiers):
         
+        if keycode[1] == 'backspace':
+            self.command = self.command[:-1]
+            return
+        
         if len(modifiers) == 1:
             if modifiers[0] == 'shift':
                 if text.isdigit():
                     text = self.special_characters[int(text)+1]
                 else:
                     text = text.capitalize()
-        
-        if keycode[1] == 'backspace':
-            self.command = self.command[:-1]
-            return
             
-        elif keycode[1] == 'enter':
+        if keycode[1] == 'enter':
             self.log.text += '{}{}\n'.format(self.workingdir, self.command)
             #!!! -> Process Commands Here <- !!!#
             output = 'output goes here'
