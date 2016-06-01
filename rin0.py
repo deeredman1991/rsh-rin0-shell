@@ -18,23 +18,34 @@ class Shell(Widget):
     def __init__(self):
         super(Shell, self).__init__()
         
-        self.size = Window.size
-        
+        #Keyboard Initialization
         self._keyboard = Window.request_keyboard(self._keyboard_closed, self, 'text')
         self._keyboard.bind(on_key_down=self._on_keyboard_down)
+        self.ignorekeys = ['shift', 'rshift', 'capslock', 'backspace', 'lctrl', 'rctrl']
+        self.special_characters = ['!', '@', '#', '$', '%', '^', '&', '*', '(', ')']
         
+        #Command Line Initialization
+        self.command_line = Label(font_name = SETTINGS["Font Path"], font_size = SETTINGS["Font Size"])
+        self.command_line.color = ( SETTINGS["Text Colors"]["Command Line"]["Red"],
+                                    SETTINGS["Text Colors"]["Command Line"]["Green"],
+                                    SETTINGS["Text Colors"]["Command Line"]["Blue"], 1)
+        self.command_line.height = self.command_line.font_size + 4 #4 pixels > font size feels about right.
+        self.add_widget(self.command_line)
+        
+        #Log Initialization
+        self.log = Label(font_name = SETTINGS["Font Path"], font_size = SETTINGS["Font Size"])
+        self.log.color = (  SETTINGS["Text Colors"]["Log"]["Red"],
+                            SETTINGS["Text Colors"]["Log"]["Green"],
+                            SETTINGS["Text Colors"]["Log"]["Blue"], 1)
+        self.log.y = self.command_line.height
+        self.add_widget(self.log)
+        
+        #Misc Init
         self.workingdir = "C:\working\dir\goes\here>"
         self.command = ''
         self.cursor = '_'
         
-        self.command_line = Label(font_name = SETTINGS["Font Path"], font_size = SETTINGS["Font Size"])
-        
-        self.add_widget(self.command_line)
-        
-        self.log = Label(font_name = SETTINGS["Font Path"], font_size = SETTINGS["Font Size"])
-        self.add_widget(self.log)
-        
-        Clock.schedule_interval(self.update, 1.0/30.0) # 30 fps
+        Clock.schedule_interval(self.update, 1.0/15.0) # 15 fps
         Clock.schedule_interval(self.blink_cursor, 1.0/2)
         
     def blink_cursor(self, *ignore):
@@ -51,11 +62,8 @@ class Shell(Widget):
             
             #Set Command Line Label Size
             self.command_line.width = self.width
-            self.command_line.height = self.command_line.font_size
             self.command_line.text_size = self.command_line.size
-            self.command_line.color = (SETTINGS["Text Colors"]["Command Line"]["Red"],
-                                       SETTINGS["Text Colors"]["Command Line"]["Green"],
-                                       SETTINGS["Text Colors"]["Command Line"]["Blue"], 1)
+            
             #Draw Command Line Background
             with self.command_line.canvas.before:
                 Color(SETTINGS["Background Colors"]["Command Line"]["Red"],
@@ -66,11 +74,7 @@ class Shell(Widget):
             #Set Log Label Size
             self.log.width = self.width
             self.log.height = self.height - self.command_line.font_size
-            self.log.y = self.command_line.height
             self.log.text_size = self.log.size
-            self.log.color = (SETTINGS["Text Colors"]["Log"]["Red"],
-                              SETTINGS["Text Colors"]["Log"]["Green"],
-                              SETTINGS["Text Colors"]["Log"]["Blue"], 1)
                               
             #Draw Log Background
             with self.log.canvas.before:
@@ -85,22 +89,21 @@ class Shell(Widget):
     def _keyboard_closed(self):
         self._keyboard.unbind(on_key_down=self._on_keyboard_down)
         self._keyboard = None
-            
-    def _on_keyboard_down(self, keyboard, keycode, text, modifiers):
-        print(keycode)
-        print(modifiers)
         
-        ignorekeys = ['shift', 'rshift', 'capslock', 'backspace', 'lctrl', 'rctrl']
-        special_characters = ['!', '@', '#', '$', '%', '^', '&', '*', '(', ')']
+    def _on_keyboard_down(self, keyboard, keycode, text, modifiers):
         
         if len(modifiers) == 1:
             if modifiers[0] == 'shift':
                 if text.isdigit():
-                    text = special_characters[int(text)+1]
+                    text = self.special_characters[int(text)+1]
                 else:
                     text = text.capitalize()
+        
+        if keycode[1] == 'backspace':
+            self.command = self.command[:-1]
+            return
             
-        if keycode[1] == 'enter':
+        elif keycode[1] == 'enter':
             self.log.text += '{}{}\n'.format(self.workingdir, self.command)
             #!!! -> Process Commands Here <- !!!#
             output = 'output goes here'
@@ -108,10 +111,7 @@ class Shell(Widget):
             self.command = ''
             return
             
-        elif keycode[1] == 'backspace':
-            self.command = self.command[:-1]
-            
-        elif keycode[1] not in ignorekeys:
+        elif keycode[1] not in self.ignorekeys:
             self.command += text
             
 class ShellApp(App):
