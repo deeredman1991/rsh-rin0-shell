@@ -33,7 +33,7 @@ class Shell(Widget):
         self.log = Label(font_name = SETTINGS["Font Path"], font_size = SETTINGS["Font Size"])
         self.add_widget(self.log)
         
-        Clock.schedule_interval(self.update, 1.0/60.0)
+        Clock.schedule_interval(self.update, 1.0/30.0)
         Clock.schedule_interval(self.blink_cursor, 1.0/2)
         
     def blink_cursor(self, *ignore):
@@ -82,25 +82,30 @@ class Shell(Widget):
     def _on_keyboard_down(self, keyboard, keycode, text, modifiers):
         print(keycode)
         print(modifiers)
-        ignorekeys = ['shift', 'capslock', 'backspace']
-        try:
-            if len(modifiers) == 1 and modifiers[0] == 'shift':
-                text = text.capitalize()
-                
-            if keycode[1] == 'enter':
-                self.log.text += '{}{}\n'.format(self.workingdir, self.command)
-                #!!! -> Process Commands Here <- !!!#
-                output = 'output goes here'
-                self.log.text += output + '\n\n'
-                self.command = ''
-                
-            if keycode[1] == 'backspace':
-                self.command = self.command[:-1]
-                
-            if keycode[1] not in ignorekeys:
-                self.command += text
-        except:
-            print("Fired exception!!!")
+        
+        ignorekeys = ['shift', 'rshift', 'capslock', 'backspace', 'lctrl', 'rctrl']
+        special_characters = ['!', '@', '#', '$', '%', '^', '&', '*', '(', ')']
+        
+        if len(modifiers) == 1:
+            if modifiers[0] == 'shift':
+                if text.isdigit():
+                    text = special_characters[int(text)+1]
+                else:
+                    text = text.capitalize()
+            
+        if keycode[1] == 'enter':
+            self.log.text += '{}{}\n'.format(self.workingdir, self.command)
+            #!!! -> Process Commands Here <- !!!#
+            output = 'output goes here'
+            self.log.text += output + '\n\n'
+            self.command = ''
+            return
+            
+        elif keycode[1] == 'backspace':
+            self.command = self.command[:-1]
+            
+        elif keycode[1] not in ignorekeys:
+            self.command += text
             
 class ShellApp(App):
     def build(self):
